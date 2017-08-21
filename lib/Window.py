@@ -3,6 +3,7 @@ from PyQt5.QtCore import QCoreApplication, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QMenuBar, QFileDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QBoxLayout
 from PyQt5.QtSvg import QSvgWidget
 from lib import Converter
+from lib.Dialog import Alert
 
 class Window(QWidget):
     vars = dict()
@@ -46,7 +47,7 @@ class Window(QWidget):
         try:
             f = open(self.file, 'r')
         except OSError as err:
-            print("{0}: open failed: {1}".format(self.file, err))
+            Alert(self, "Open failed", "{0}: open failed: {1}".format(path.relpath(self.file), err))
             self.file = None
 
         asset = f.read().encode("utf-8")
@@ -78,13 +79,13 @@ class Window(QWidget):
             fn += "svg"
 
         if path.exists(fn):
-            print("{0}: exists, not erasing".format(fn))
+            Alert(self, "Write failed", "{0}: exists, not erasing".format(path.relpath(fn)))
             return
 
         try:
             f = open(fn, 'w')
         except OSError as err:
-            print("{0}: failed to open for writing: {1}".format(fn, err))
+            Alert(self, "Write failed", "{0}: failed to open for writing: {1}".format(path.relpath(fn), err))
             return
 
         if fn.endswith("svg"):

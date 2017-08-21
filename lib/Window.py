@@ -41,7 +41,7 @@ class Window(QWidget):
     def openFile(self):
         self.file, filter = QFileDialog.getOpenFileName(self, "Open image", "",
             "Vector graphics file (*.svg *.xml)")
-        if self.file is None:
+        if self.file is None or self.file == '':
             return
 
         try:

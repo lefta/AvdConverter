@@ -17,25 +17,27 @@
 
 from lxml import objectify, etree
 
-_DOCTYPE = '<?xml version="1.0" encoding="utf-8" standalone="no" ?>\n'.encode("utf-8")
+_SVG_DOCTYPE = '<?xml version="1.0" encoding="utf-8" standalone="no" ?>\n'.encode("utf-8")
+_AVD_DOCTYPE = '<?xml version="1.0" encoding="utf-8"?>\n'.encode("utf-8")
 _ANDROID = "{http://schemas.android.com/apk/res/android}%s"
+_SVG = "{http://www.w3.org/2000/svg}%s"
 
 def avd2svg(contents):
     tree = etree.fromstring(contents)
     errs = []
     for e in tree.iter("*"):
         try:
-            errs += _elements[e.tag](e)
+            errs += _AVDelements[e.tag](e)
         except KeyError:
             errs.append("%s: unsupported tag, ignored" % e.tag)
     objectify.deannotate(tree, cleanup_namespaces=True)
-    return _DOCTYPE + etree.tostring(tree).replace(
+    return _SVG_DOCTYPE + etree.tostring(tree).replace(
         b'<svg',
         b'<svg xmlns="http://www.w3.org/2000/svg"'
     ), errs
 
 
-def _vector(e):
+def _AVDvector(e):
     width = None
     height = None
     viewportWidth = None
@@ -61,7 +63,7 @@ def _vector(e):
     e.tag = "svg"
     return errs
 
-def _path(e):
+def _AVDpath(e):
     fill = None
     stroke = None
     strokeWidth = None
@@ -88,11 +90,82 @@ def _path(e):
     return errs
 
 
-_elements = {
-    "vector": _vector,
-    "path": _path
+_AVDelements = {
+    "vector": _AVDvector,
+    "path": _AVDpath
 }
 
 
 def svg2avd(contents):
-    print("SVG to AVD conveersion is not implemented")
+    contents = contents.replace(
+        b'xmlns="http://www.w3.org/2000/svg"',
+        b'xmlns:android="http://schemas.android.com/apk/res/android"'
+    )
+    tree = etree.fromstring(contents)
+    errs = []
+    for e in tree.iter("*"):
+        try:
+            errs += _SVGelements[e.tag](e)
+        except KeyError:
+            errs.append("%s: unsupported tag, ignored" % e.tag)
+    return _AVD_DOCTYPE + etree.tostring(tree), errs
+
+
+def _SVGsvg(e):
+    width = None
+    height = None
+    viewBox = None
+
+    errs = []
+    for a, v in e.items():
+        if a == 'width':
+            width = v
+        elif a == 'height':
+            height = v
+        elif a == 'viewBox':
+            viewBox = v
+        else:
+            errs.append("%s: unsupported attribute, it have been ignored" % a)
+
+    e.attrib.clear()
+    e.set(_ANDROID % 'width', width)
+    e.set(_ANDROID % 'height', height)
+    viewport = viewBox.split(' ')
+    if viewport[0] != 0 or viewport[1] != 0:
+        errs.append("Non 0 viewBox origin is not supported, the result may not be the one expected")
+    e.set(_ANDROID % 'viewportWidth', viewport[2])
+    e.set(_ANDROID % 'viewportHeight', viewport[3])
+    e.tag = "vector"
+    return errs
+
+
+def _SVGpath(e):
+    fillColor = None
+    strokeColor = None
+    strokeWidth = None
+    pathData = None
+
+    errs = []
+    for a, v in e.items():
+        if a == 'fill':
+            fillColor = v
+        elif a == 'stroke-width':
+            strokeWidth = v
+        elif a == 'stroke':
+            strokeColor = v
+        elif a == 'd':
+            pathData = v
+        else:
+            errs.append("%s: unsupported attribute, it have been ignored" % a)
+
+    e.attrib.clear()
+    e.set(_ANDROID % 'fillColor', fillColor)
+    e.set(_ANDROID % 'strokeColor', strokeColor)
+    e.set(_ANDROID % 'strokeWidth', strokeWidth)
+    e.set(_ANDROID % 'pathData', pathData)
+    return errs
+
+_SVGelements = {
+    "svg": _SVGsvg,
+    "path": _SVGpath
+}

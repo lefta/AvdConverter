@@ -120,7 +120,7 @@ class Window(QWidget):
         if fn.endswith("svg"):
             f.write(self._replaceVarsSVG())
         else:
-            contents, errs = Converter.svg2avd(self.previewContents)
+            contents, errs = Converter.svg2avd(self._replaceVarsAVD())
             for e in errs:
                 self.logs.appendPlainText(e)
             f.write(contents)
@@ -130,4 +130,10 @@ class Window(QWidget):
         asset = self.previewContents
         for var, val in self.vars.items():
             asset = asset.replace(var.encode("utf-8"), val.text().encode("utf-8"))
+        return asset
+
+    def _replaceVarsAVD(self):
+        asset = self.previewContents
+        for var, val in self.vars.items():
+            asset = asset.replace(val.text().encode("utf-8"), var.encode("utf-8"))
         return asset

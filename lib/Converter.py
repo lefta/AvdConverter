@@ -141,7 +141,7 @@ def _SVGsvg(e):
         e.set(_ANDROID % 'height', height)
     if viewBox is not None:
         viewport = viewBox.split(' ')
-        if viewport[0] != 0 or viewport[1] != 0:
+        if viewport[0] != "0" or viewport[1] != "0":
             errs.append("Non 0 viewBox origin is not supported, the result may not be the one expected")
         e.set(_ANDROID % 'viewportWidth', viewport[2])
         e.set(_ANDROID % 'viewportHeight', viewport[3])

@@ -80,9 +80,9 @@ class Window(QWidget):
 
         if self.file.endswith("xml"):
             self.previewContents, errs = Converter.avd2svg(self.previewContents)
+            for e in errs:
+                self.logs.appendPlainText(e)
 
-        for e in errs:
-            self.logs.appendPlainText(e)
         self._reloadPreview()
 
     def _addVar(self, var, val):

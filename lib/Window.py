@@ -45,18 +45,17 @@ class Window(QWidget):
             return
 
         try:
-            f = open(self.file, 'r')
+            f = open(self.file, 'rb')
         except OSError as err:
             Alert(self, "Open failed", "{0}: open failed: {1}".format(path.relpath(self.file), err))
             self.file = None
 
-        asset = f.read().encode("utf-8")
+        self.previewContents = f.read()
         f.close()
 
         if self.file.endswith("xml"):
-            asset = Converter.avd2svg(asset)
+            self.previewContents = Converter.avd2svg(self.previewContents)
 
-        self.previewContents = asset
         self._reloadPreview()
 
     def _addVar(self, var, val):
@@ -83,15 +82,15 @@ class Window(QWidget):
             return
 
         try:
-            f = open(fn, 'w')
+            f = open(fn, 'wb')
         except OSError as err:
             Alert(self, "Write failed", "{0}: failed to open for writing: {1}".format(path.relpath(fn), err))
             return
 
         if fn.endswith("svg"):
-            f.write(self._replaceVarsSVG().decode("utf-8"))
+            f.write(self._replaceVarsSVG())
         else:
-            f.write(Converter.svg2avd(self.previewContents).decode("utf-8"))
+            f.write(Converter.svg2avd(self.previewContents))
         f.close()
 
     def _replaceVarsSVG(self):

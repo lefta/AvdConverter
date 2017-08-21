@@ -57,9 +57,12 @@ def _AVDvector(e):
             errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
-    e.set('width', width)
-    e.set('height', height)
-    e.set('viewBox', "0 0 {0} {1}".format(viewportWidth, viewportHeight))
+    if width is not None:
+        e.set('width', width)
+    if height is not None:
+        e.set('height', height)
+    if viewportWidth is not None and viewportHeight is not None:
+        e.set('viewBox', "0 0 {0} {1}".format(viewportWidth, viewportHeight))
     e.tag = "svg"
     return errs
 
@@ -83,10 +86,14 @@ def _AVDpath(e):
             errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
-    e.set('fill', fill)
-    e.set('stroke', stroke)
-    e.set('stroke-width', strokeWidth)
-    e.set('d', d)
+    if fill is not None:
+        e.set('fill', fill)
+    if stroke is not None:
+        e.set('stroke', stroke)
+    if strokeWidth is not None:
+        e.set('stroke-width', strokeWidth)
+    if d is not None:
+        e.set('d', d)
     return errs
 
 
@@ -128,13 +135,16 @@ def _SVGsvg(e):
             errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
-    e.set(_ANDROID % 'width', width)
-    e.set(_ANDROID % 'height', height)
-    viewport = viewBox.split(' ')
-    if viewport[0] != 0 or viewport[1] != 0:
-        errs.append("Non 0 viewBox origin is not supported, the result may not be the one expected")
-    e.set(_ANDROID % 'viewportWidth', viewport[2])
-    e.set(_ANDROID % 'viewportHeight', viewport[3])
+    if width is not None:
+        e.set(_ANDROID % 'width', width)
+    if height is not None:
+        e.set(_ANDROID % 'height', height)
+    if viewBox is not None:
+        viewport = viewBox.split(' ')
+        if viewport[0] != 0 or viewport[1] != 0:
+            errs.append("Non 0 viewBox origin is not supported, the result may not be the one expected")
+        e.set(_ANDROID % 'viewportWidth', viewport[2])
+        e.set(_ANDROID % 'viewportHeight', viewport[3])
     e.tag = "vector"
     return errs
 
@@ -159,10 +169,14 @@ def _SVGpath(e):
             errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
-    e.set(_ANDROID % 'fillColor', fillColor)
-    e.set(_ANDROID % 'strokeColor', strokeColor)
-    e.set(_ANDROID % 'strokeWidth', strokeWidth)
-    e.set(_ANDROID % 'pathData', pathData)
+    if fillColor is not None:
+        e.set(_ANDROID % 'fillColor', fillColor)
+    if strokeColor is not None:
+        e.set(_ANDROID % 'strokeColor', strokeColor)
+    if strokeWidth is not None:
+        e.set(_ANDROID % 'strokeWidth', strokeWidth)
+    if pathData is not None:
+        e.set(_ANDROID % 'pathData', pathData)
     return errs
 
 _SVGelements = {

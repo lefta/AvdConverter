@@ -49,6 +49,7 @@ class Window(QWidget):
         except OSError as err:
             Alert(self, "Open failed", "{0}: open failed: {1}".format(path.relpath(self.file), err))
             self.file = None
+            return
 
         self.previewContents = f.read()
         f.close()

@@ -105,9 +105,11 @@ class Window(QWidget):
             fn += "svg"
 
         if path.exists(fn):
-            QMessageBox.critical(self, "Write failed",
-                "{0}: exists, not erasing".format(path.relpath(fn)))
-            return
+            answer = QMessageBox.question(self, "File exists",
+                "{0} already exists, would you like to override it?".format(path.relpath(fn)))
+            print(answer, QMessageBox.No)
+            if answer == QMessageBox.No:
+                return
 
         try:
             f = open(fn, 'wb')

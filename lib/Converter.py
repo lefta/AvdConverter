@@ -5,13 +5,17 @@ _ANDROID = "{http://schemas.android.com/apk/res/android}%s"
 
 def avd2svg(contents):
     tree = etree.fromstring(contents)
+    errs = []
     for e in tree.iter("*"):
-        _elements[e.tag](e)
+        try:
+            errs += _elements[e.tag](e)
+        except KeyError:
+            errs.append("%s: unsupported tag, ignored" % e.tag)
     objectify.deannotate(tree, cleanup_namespaces=True)
     return _DOCTYPE + etree.tostring(tree).replace(
         b'<svg',
         b'<svg xmlns="http://www.w3.org/2000/svg"'
-    )
+    ), errs
 
 
 def _vector(e):
@@ -20,6 +24,7 @@ def _vector(e):
     viewportWidth = None
     viewportHeight = None
 
+    errs = []
     for a, v in e.items():
         if a == _ANDROID % 'width':
             width = v
@@ -30,13 +35,14 @@ def _vector(e):
         elif a == _ANDROID % 'viewportHeight':
             viewportHeight = v
         else:
-            print("%s: unsupported attribute, it have been ignored" % a)
+            errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
     e.set('width', width)
     e.set('height', height)
     e.set('viewBox', "0 0 {0} {1}".format(viewportWidth, viewportHeight))
     e.tag = "svg"
+    return errs
 
 def _path(e):
     fill = None
@@ -44,6 +50,7 @@ def _path(e):
     strokeWidth = None
     d = None
 
+    errs = []
     for a, v in e.items():
         if a == _ANDROID % 'fillColor':
             fill = v
@@ -54,13 +61,14 @@ def _path(e):
         elif a == _ANDROID % 'pathData':
             d = v
         else:
-            print("%s: unsupported attribute, it have been ignored" % a)
+            errs.append("%s: unsupported attribute, it have been ignored" % a)
 
     e.attrib.clear()
     e.set('fill', fill)
     e.set('stroke', stroke)
     e.set('stroke-width', strokeWidth)
     e.set('d', d)
+    return errs
 
 
 _elements = {

@@ -1,6 +1,6 @@
 from os import path
 from PyQt5.QtCore import QCoreApplication, pyqtSlot
-from PyQt5.QtWidgets import QWidget, QMenuBar, QFileDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QBoxLayout
+from PyQt5.QtWidgets import QWidget, QMenuBar, QFileDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QBoxLayout, QPlainTextEdit
 from PyQt5.QtSvg import QSvgWidget
 from lib import Converter
 from lib.Dialog import Alert
@@ -18,21 +18,27 @@ class Window(QWidget):
         menu.addAction("Open", self.openFile)
         menu.addAction("Exit", QCoreApplication.instance().quit)
 
-        container = QBoxLayout(QBoxLayout.TopToBottom, self)
+        appContainer = QBoxLayout(QBoxLayout.TopToBottom)
 
         self.preview = QSvgWidget()
-        container.addWidget(self.preview)
+        appContainer.addWidget(self.preview)
         self.varContainer = QGridLayout()
-        container.addLayout(self.varContainer)
+        appContainer.addLayout(self.varContainer)
 
         #TODO This is called variable for a reason
         self._addVar("@android:color/holo_blue_light", "#0000ff")
         self._addVar("@android:color/background_dark", "#ffffff")
 
-        buttonContainer = QBoxLayout(QBoxLayout.LeftToRight)
         save = QPushButton("Convert")
         save.clicked.connect(self._saveConversion)
-        container.addWidget(save)
+        appContainer.addWidget(save)
+
+        container = QBoxLayout(QBoxLayout.LeftToRight, self)
+        container.addLayout(appContainer)
+
+        self.logs = QPlainTextEdit()
+        self.logs.setReadOnly(True)
+        container.addWidget(self.logs)
 
         self.setWindowTitle('AvdConverter')
         self.show()
@@ -55,8 +61,10 @@ class Window(QWidget):
         f.close()
 
         if self.file.endswith("xml"):
-            self.previewContents = Converter.avd2svg(self.previewContents)
+            self.previewContents, errs = Converter.avd2svg(self.previewContents)
 
+        for e in errs:
+            self.logs.appendPlainText(e)
         self._reloadPreview()
 
     def _addVar(self, var, val):
@@ -91,7 +99,10 @@ class Window(QWidget):
         if fn.endswith("svg"):
             f.write(self._replaceVarsSVG())
         else:
-            f.write(Converter.svg2avd(self.previewContents))
+            contents, errs = Converter.svg2avd(self.previewContents)
+            for e in errs:
+                self.logs.appendPlainText(e)
+            f.write(contents)
         f.close()
 
     def _replaceVarsSVG(self):

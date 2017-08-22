@@ -104,6 +104,7 @@ class Window(QWidget):
     def _setRoot(self, path):
         self.model.setRootPath(path)
         self.tree.setRootIndex(self.model.index(path))
+        self.rootPath = path
 
     @pyqtSlot(QModelIndex)
     def _fileSelected(self, idx):
@@ -116,14 +117,14 @@ class Window(QWidget):
     def openFile(self, fn):
         if not path.isfile(fn) or not (fn.endswith(".xml") or fn.endswith(".svg")):
             QMessageBox.critical(self, "Open failed",
-                "{0}: not a valid file".format(path.relpath(fn)))
+                "{0}: not a valid file".format(path.relpath(fn, self.rootPath)))
             return
 
         try:
             f = open(fn, 'rb')
         except OSError as err:
             QMessageBox.critical(self, "Open failed",
-                "{0}: open failed: {1}".format(path.relpath(fn), err))
+                "{0}: open failed: {1}".format(path.relpath(fn, self.rootPath), err))
             return
 
         self.previewContents = f.read()
@@ -158,7 +159,8 @@ class Window(QWidget):
 
         if path.exists(fn):
             answer = QMessageBox.question(self, "File exists",
-                "{0} already exists, would you like to override it?".format(path.relpath(fn)))
+                "{0} already exists, would you like to override it?".format(path.relpath(fn,
+                self.rootPath)))
             if answer == QMessageBox.No:
                 return
 
@@ -166,7 +168,7 @@ class Window(QWidget):
             f = open(fn, 'wb')
         except OSError as err:
             QMessageBox.critical(self, "Write failed",
-                "{0}: failed to open for writing: {1}".format(path.relpath(fn), err))
+                "{0}: failed to open for writing: {1}".format(path.relpath(fn, self.rootPath), err))
             return
 
         if fn.endswith("svg"):

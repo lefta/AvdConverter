@@ -16,9 +16,9 @@
 # OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from os import path
-from PyQt5.QtCore import QCoreApplication, pyqtSlot
-from PyQt5.QtWidgets import (QBoxLayout, QFileDialog, QGridLayout, QLabel, QLineEdit, QMenuBar,
-    QMessageBox, QPlainTextEdit, QPushButton, QWidget)
+from PyQt5.QtCore import QCoreApplication, QDir, QModelIndex, pyqtSlot
+from PyQt5.QtWidgets import (QBoxLayout, QFileDialog, QFileSystemModel, QGridLayout, QLabel,
+    QLineEdit, QMenuBar, QMessageBox, QPlainTextEdit, QPushButton, QTreeView, QWidget)
 from PyQt5.QtSvg import QSvgWidget
 from lib import Converter
 
@@ -32,9 +32,42 @@ class Window(QWidget):
     def _initUI(self):
         menubar = QMenuBar(self)
         menu = menubar.addMenu("File")
-        menu.addAction("Open", self.openFile)
         menu.addAction("Exit", QCoreApplication.instance().quit)
 
+        container = QBoxLayout(QBoxLayout.LeftToRight, self)
+        self._initDirUI(container)
+        self._initAppUI(container)
+
+        self.logs = QPlainTextEdit()
+        self.logs.setReadOnly(True)
+        container.addWidget(self.logs)
+
+        self.setWindowTitle('AvdConverter')
+        self.show()
+
+    def _initDirUI(self, container):
+        dirContainer = QBoxLayout(QBoxLayout.TopToBottom)
+
+        self.model = QFileSystemModel()
+        self.model.setNameFilters(["*.svg", "*.xml"])
+        self.model.setNameFilterDisables(False)
+
+        self.tree = QTreeView()
+        self.tree.setModel(self.model)
+        self.tree.setHeaderHidden(True)
+        self.tree.setColumnHidden(1, True)
+        self.tree.setColumnHidden(2, True)
+        self.tree.setColumnHidden(3, True)
+        self.tree.activated.connect(self._fileSelected)
+        self._setRoot(QDir.currentPath())
+        dirContainer.addWidget(self.tree)
+
+        changeDirButton = QPushButton("Select directory")
+        changeDirButton.clicked.connect(self._changeDir)
+        dirContainer.addWidget(changeDirButton)
+        container.addLayout(dirContainer)
+
+    def _initAppUI(self, container):
         appContainer = QBoxLayout(QBoxLayout.TopToBottom)
 
         self.preview = QSvgWidget()
@@ -50,34 +83,43 @@ class Window(QWidget):
         save.clicked.connect(self._saveConversion)
         appContainer.addWidget(save)
 
-        container = QBoxLayout(QBoxLayout.LeftToRight, self)
         container.addLayout(appContainer)
 
-        self.logs = QPlainTextEdit()
-        self.logs.setReadOnly(True)
-        container.addWidget(self.logs)
 
-        self.setWindowTitle('AvdConverter')
-        self.show()
+    def _changeDir(self):
+        dir = QFileDialog.getExistingDirectory(self, "Work directory", ".")
+        if dir is not None and dir != '':
+            self._setRoot(dir)
+
+    def _setRoot(self, path):
+        self.model.setRootPath(path)
+        self.tree.setRootIndex(self.model.index(path))
+
+    @pyqtSlot(QModelIndex)
+    def _fileSelected(self, idx):
+        fn = self.model.filePath(idx)
+        if path.isfile(fn):
+            self.openFile(fn)
+
 
     @pyqtSlot()
-    def openFile(self):
-        self.file, filter = QFileDialog.getOpenFileName(self, "Open image", "",
-            "Vector graphics file (*.svg *.xml)")
-        if self.file is None or self.file == '':
+    def openFile(self, fn):
+        if not path.isfile(fn) or not (fn.endswith(".xml") or fn.endswith(".svg")):
+            QMessageBox.critical(self, "Open failed",
+                "{0}: not a valid file".format(path.relpath(fn)))
             return
 
         try:
-            f = open(self.file, 'rb')
+            f = open(fn, 'rb')
         except OSError as err:
             QMessageBox.critical(self, "Open failed",
-                "{0}: open failed: {1}".format(path.relpath(self.file), err))
-            self.file = None
+                "{0}: open failed: {1}".format(path.relpath(fn), err))
             return
 
         self.previewContents = f.read()
         f.close()
 
+        self.file = fn
         if self.file.endswith("xml"):
             self.previewContents, errs = Converter.avd2svg(self.previewContents)
             for e in errs:

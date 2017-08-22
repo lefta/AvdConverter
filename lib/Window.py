@@ -83,10 +83,16 @@ class Window(QWidget):
         self.logs.setReadOnly(True)
         logContainer.addWidget(self.logs)
 
+        buttonContainer = QBoxLayout(QBoxLayout.LeftToRight)
+        clearButton = QPushButton("Clear log")
+        clearButton.clicked.connect(self.logs.clear)
+        buttonContainer.addWidget(clearButton)
+
         quitButton = QPushButton("Exit")
         quitButton.clicked.connect(QCoreApplication.instance().quit)
-        logContainer.addWidget(quitButton)
+        buttonContainer.addWidget(quitButton)
 
+        logContainer.addLayout(buttonContainer)
         container.addLayout(logContainer)
 
 

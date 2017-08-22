@@ -27,20 +27,11 @@ class Window(QWidget):
 
     def __init__(self):
         super().__init__()
-        self._initUI()
-
-    def _initUI(self):
-        menubar = QMenuBar(self)
-        menu = menubar.addMenu("File")
-        menu.addAction("Exit", QCoreApplication.instance().quit)
 
         container = QBoxLayout(QBoxLayout.LeftToRight, self)
         self._initDirUI(container)
         self._initAppUI(container)
-
-        self.logs = QPlainTextEdit()
-        self.logs.setReadOnly(True)
-        container.addWidget(self.logs)
+        self._initLogUI(container)
 
         self.setWindowTitle('AvdConverter')
         self.show()
@@ -84,6 +75,19 @@ class Window(QWidget):
         appContainer.addWidget(save)
 
         container.addLayout(appContainer)
+
+    def _initLogUI(self, container):
+        logContainer = QBoxLayout(QBoxLayout.TopToBottom)
+
+        self.logs = QPlainTextEdit()
+        self.logs.setReadOnly(True)
+        logContainer.addWidget(self.logs)
+
+        quitButton = QPushButton("Exit")
+        quitButton.clicked.connect(QCoreApplication.instance().quit)
+        logContainer.addWidget(quitButton)
+
+        container.addLayout(logContainer)
 
 
     def _changeDir(self):

@@ -24,17 +24,30 @@ _SVG = "{http://www.w3.org/2000/svg}%s"
 
 def avd2svg(contents):
     tree = etree.fromstring(contents)
-    errs = []
-    for e in tree.iter("*"):
-        try:
-            errs += _AVDelements[e.tag](e)
-        except KeyError:
-            errs.append("%s: unsupported tag, ignored" % e.tag)
+    if tree.tag != "vector":
+        svg = etree.Element("svg")
+        svg.append(tree)
+        tree = svg
+
+    errs = _AVDiter(tree)
     objectify.deannotate(tree, cleanup_namespaces=True)
     return _SVG_DOCTYPE + etree.tostring(tree).replace(
         b'<svg',
         b'<svg xmlns="http://www.w3.org/2000/svg"'
     ), errs
+
+
+def _AVDiter(e):
+    errs = []
+    try:
+        errs += _AVDelements[e.tag](e)
+    except KeyError:
+        errs.append("%s: unsupported tag, ignored" % e.tag)
+
+    for child in e:
+        errs += _AVDiter(child)
+
+    return errs
 
 
 def _AVDvector(e):

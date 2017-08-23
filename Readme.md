@@ -39,6 +39,5 @@ At the moment, AvdConverter only supports the `vector` and `path` tags, but bett
 
 * Full support for AVD file format
 * Better support for SVG features not supported by AVD (convert when possible)
-* Batch open / directory open
 * Batch convert
 * CLI support (without the Qt dependency)

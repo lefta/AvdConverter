@@ -50,6 +50,10 @@ def _AVDiter(e):
     return errs
 
 
+def _AVDsvg(e):
+    # Stub to avoid an error when an svg tag is replaced
+    return []
+
 def _AVDvector(e):
     width = None
     height = None
@@ -109,10 +113,85 @@ def _AVDpath(e):
         e.set('d', d)
     return errs
 
+def _AVDshape(e):
+    shape = None
+
+    errs = []
+    for a, v in e.items():
+        if a == _ANDROID % 'shape':
+            shape = v
+        else:
+            errs.append("%s: unsupported attribute, it have been ignored" % a)
+
+    if shape is None:
+        shape = "rectangle"
+
+    e.attrib.clear()
+
+    # Android `shape` do not have size informations, but SVG counterparts needs some
+    if shape == "rectangle":
+        errs += _AVDshape_rectangle(e)
+    else:
+        errs.append("%s: unsupported shape value, it have been ignored" % shape)
+        errs += _AVDshape_rectangle(e)
+
+    return errs
+
+def _AVDshape_rectangle(e):
+    e.tag = "rect"
+    e.set("x", "0")
+    e.set("y", "0")
+
+    width = "20"
+    height = "20"
+
+    # Manually parse childs to get attributes
+    errs = []
+    for child in e:
+        if child.tag == "corners":
+            for a, v in child.items():
+                if a == _ANDROID % 'radius':
+                    e.set("rx", v)
+                    e.set("ry", v)
+                else:
+                    errs.append("%s: unsupported attribute, it have been ignored" % a)
+        elif child.tag == "size":
+            for a, v in child.items():
+                if a == _ANDROID % 'width':
+                    width = v
+                elif a == _ANDROID % 'height':
+                    height = v
+                else:
+                    errs.append("%s: unsupported attribute, it have been ignored" % a)
+        elif child.tag == "solid":
+            for a, v in child.items():
+                if a == _ANDROID % 'color':
+                    e.set("fill", v)
+                else:
+                    errs.append("%s: unsupported attribute, it have been ignored" % a)
+        elif child.tag == "stroke":
+            for a, v in child.items():
+                if a == _ANDROID % 'color':
+                    e.set("stroke", v)
+                elif a == _ANDROID % 'width':
+                    e.set("stroke-width", v)
+                else:
+                    errs.append("%s: unsupported attribute, it have been ignored" % a)
+
+        else:
+            errs.append("%s: unsupported tag, ignored" % child.tag)
+        e.remove(child)
+
+    e.set("width", width)
+    e.set("height", height)
+    return errs
+
 
 _AVDelements = {
+    "svg": _AVDsvg,
     "vector": _AVDvector,
-    "path": _AVDpath
+    "path": _AVDpath,
+    "shape": _AVDshape
 }
 
 
